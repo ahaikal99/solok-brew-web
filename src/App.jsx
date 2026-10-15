@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
 
 const menu = [
-  { id: 'latte', category: 'Minuman', name: 'Solok Latte', note: 'Espresso, susu segar & gula melaka', price: 11, icon: '☕', tone: 'coffee' },
+  { id: 'latte', category: 'Minuman', name: 'Solok Latte', note: 'Espresso, susu segar & gula melaka', price: 11, icon: '☕', tone: 'coffee', tag: 'Pilihan ramai' },
   { id: 'americano', category: 'Minuman', name: 'Americano', note: 'Double shot espresso yang bersih', price: 8, icon: '◒', tone: 'dark' },
-  { id: 'matcha', category: 'Minuman', name: 'Matcha Cloud', note: 'Matcha premium dengan krim lembut', price: 13, icon: '🍵', tone: 'matcha' },
+  { id: 'matcha', category: 'Minuman', name: 'Matcha Cloud', note: 'Matcha premium dengan krim lembut', price: 13, icon: '🍵', tone: 'matcha', tag: 'Baru' },
   { id: 'mocha', category: 'Minuman', name: 'Mocha', note: 'Coklat gelap & espresso', price: 12, icon: '◉', tone: 'cocoa' },
-  { id: 'croffle', category: 'Makanan', name: 'Kaya Butter Croffle', note: 'Rangup, kaya pandan & mentega', price: 10, icon: '▱', tone: 'pastry' },
-  { id: 'toast', category: 'Makanan', name: 'Sourdough Toastie', note: 'Ayam panggang, keju & salad', price: 15, icon: '◫', tone: 'toast' },
+  { id: 'croffle', category: 'Makanan', name: 'Kaya Butter Croffle', note: 'Rangup, kaya pandan & mentega', price: 10, icon: '▱', tone: 'pastry', tag: 'Rangup' },
+  { id: 'toast', category: 'Makanan', name: 'Sourdough Toastie', note: 'Ayam panggang, keju & salad', price: 15, icon: '◫', tone: 'pastry' },
   { id: 'pasta', category: 'Makanan', name: 'Creamy Mushroom Pasta', note: 'Cendawan, parmesan & herba', price: 18, icon: '◌', tone: 'pasta' },
   { id: 'tiramisu', category: 'Dessert', name: 'Tiramisu', note: 'Mascarpone & kopi SolokBrew', price: 14, icon: '▤', tone: 'tiramisu' },
   { id: 'cake', category: 'Dessert', name: 'Burnt Cheesecake', note: 'Lembut di tengah, karamel di luar', price: 14, icon: '◒', tone: 'cake' },
@@ -14,73 +14,51 @@ const menu = [
 
 const money = value => `RM${value.toFixed(2)}`
 const tableFromUrl = new URLSearchParams(window.location.search).get('table') || '07'
+const categories = ['Semua', 'Minuman', 'Makanan', 'Dessert']
+const promotions = [
+  { eyebrow: 'WAKTU TERHAD', title: 'Coffee break\nyang lebih berbaloi.', detail: 'Nikmati 20% diskaun untuk minuman kedua.', code: 'SOLOK20', art: '☕', theme: 'terracotta' },
+  { eyebrow: 'PILIHAN HARI INI', title: 'Matcha Cloud\nuntuk mood yang tenang.', detail: 'Lembut, sejuk dan dibuat segar untuk anda.', code: 'MATCHA5', art: '🍵', theme: 'sage' },
+  { eyebrow: 'TEMAN KOPI', title: 'Croffle hangat,\nlebih sedap bersama.', detail: 'Tambah Kaya Butter Croffle pada pesanan anda.', code: 'CROFFLE', art: '🥐', theme: 'gold' },
+]
 
-function App() {
-  const [step, setStep] = useState('welcome')
-  const [customer, setCustomer] = useState({ name: '', phone: '' })
-  const [category, setCategory] = useState('Semua')
-  const [cart, setCart] = useState([])
-  const [notice, setNotice] = useState('')
-  const [orderNo, setOrderNo] = useState('')
+function Brand() { return <div className="brand" aria-label="Solok Brew"><span className="brand-mark">s</span><span>solok<span>brew</span></span></div> }
 
-  const filtered = category === 'Semua' ? menu : menu.filter(item => item.category === category)
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const orderTotal = subtotal
-
-  function addItem(item) {
-    setCart(current => {
-      const found = current.find(entry => entry.id === item.id)
-      return found ? current.map(entry => entry.id === item.id ? { ...entry, quantity: entry.quantity + 1 } : entry) : [...current, { ...item, quantity: 1 }]
-    })
-    setNotice(`${item.name} ditambah ke troli`)
-    window.setTimeout(() => setNotice(''), 1800)
-  }
-  function changeQuantity(id, delta) {
-    setCart(current => current.map(item => item.id === id ? { ...item, quantity: item.quantity + delta } : item).filter(item => item.quantity > 0))
-  }
-  function startOrdering(event) {
-    event.preventDefault()
-    if (customer.name.trim() && customer.phone.trim().length >= 9) setStep('menu')
-  }
-  function confirmOrder() {
-    setOrderNo(`SB-${Math.floor(1000 + Math.random() * 9000)}`)
-    setStep('receipt')
-  }
-
-  if (step === 'welcome') return <Welcome customer={customer} setCustomer={setCustomer} onSubmit={startOrdering} />
-  if (step === 'receipt') return <Receipt customer={customer} cart={cart} total={orderTotal} orderNo={orderNo} onNewOrder={() => { setCart([]); setStep('menu') }} />
-
-  return <main className="app-shell">
-    <header className="topbar"><Brand /><button className="table-badge" title="Nombor meja daripada QR"><span>Meja</span>{tableFromUrl}</button></header>
-    <section className="greeting"><p>Hai, {customer.name.split(' ')[0]} <span>✦</span></p><h1>Apa yang anda mahu hari ini?</h1><small>Pesan dari meja anda. Bayar di kaunter selepas checkout.</small></section>
-    <nav className="category-tabs" aria-label="Kategori menu">{['Semua', 'Minuman', 'Makanan', 'Dessert'].map(tab => <button key={tab} className={category === tab ? 'active' : ''} onClick={() => setCategory(tab)}>{tab}</button>)}</nav>
-    <section className="menu-grid">{filtered.map(item => <article className="menu-card" key={item.id}><div className={`food-art ${item.tone}`}><span>{item.icon}</span></div><div className="card-copy"><p className="item-name">{item.name}</p><p className="item-note">{item.note}</p><div className="card-bottom"><strong>{money(item.price)}</strong><button className="add-button" onClick={() => addItem(item)} aria-label={`Tambah ${item.name}`}>+</button></div></div></article>)}</section>
-    {notice && <div className="toast">✓ {notice}</div>}
-    {totalItems > 0 && <button className="cart-bar" onClick={() => setStep('cart')}><span className="cart-count">{totalItems}</span><span>Lihat troli</span><strong>{money(orderTotal)} <b>›</b></strong></button>}
-  </main>
+function Welcome({ customer, setCustomer, onSubmit }) {
+  return <main className="welcome-page"><div className="welcome-card"><Brand /><div className="welcome-art" aria-hidden="true"><span>☕</span><i>✦</i><b>✦</b><em>freshly brewed</em></div><div className="intro"><p className="eyebrow">SELAMAT DATANG KE</p><h1>Kopi baik,<br />hari yang lebih baik.</h1><p>Pesan terus dari meja anda — santai, cepat dan mudah.</p></div><div className="table-card"><span>◈</span><div><small>ANDA BERADA DI</small><strong>Meja {tableFromUrl}</strong></div><b>QR menu</b></div><form onSubmit={onSubmit}><label>Nama anda<input required value={customer.name} onChange={e => setCustomer({ ...customer, name: e.target.value })} placeholder="Contoh: Aina" /></label><label>Nombor telefon<input required type="tel" inputMode="numeric" value={customer.phone} onChange={e => setCustomer({ ...customer, phone: e.target.value })} placeholder="Contoh: 012 345 6789" /></label><button className="primary" type="submit">Mula buat pesanan <span>→</span></button></form><p className="privacy">Maklumat anda digunakan untuk pesanan ini sahaja.</p></div></main>
 }
 
-function Welcome({ customer, setCustomer, onSubmit }) { return <main className="welcome-page"><div className="welcome-card"><Brand /><div className="welcome-art"><span>☕</span><i>✦</i><b>✦</b></div><div className="intro"><p className="eyebrow">SELAMAT DATANG KE</p><h1>Kopi baik,<br />hari yang lebih baik.</h1><p>Pesan terus dari meja anda — santai, cepat dan mudah.</p></div><div className="table-card"><span>◈</span><div><small>ANDA BERADA DI</small><strong>Meja {tableFromUrl}</strong></div></div><form onSubmit={onSubmit}><label>Nama anda<input required value={customer.name} onChange={e => setCustomer({ ...customer, name: e.target.value })} placeholder="Contoh: Aina" /></label><label>Nombor telefon<input required type="tel" inputMode="numeric" value={customer.phone} onChange={e => setCustomer({ ...customer, phone: e.target.value })} placeholder="Contoh: 012 345 6789" /></label><button className="primary" type="submit">Mula buat pesanan <span>→</span></button></form><p className="privacy">Dengan meneruskan, anda bersetuju untuk menggunakan maklumat ini bagi pesanan anda.</p></div></main> }
-function Brand() { return <div className="brand"><span className="brand-mark">s</span><span>solok<span>brew</span></span></div> }
-function Cart({ cart, subtotal, onChange, onBack, onCheckout }) { return <main className="app-shell cart-page"><header className="topbar"><button className="back" onClick={onBack}>←</button><Brand /><span className="table-mini">Meja {tableFromUrl}</span></header><h1>Troli anda</h1><p className="muted">Semak pesanan sebelum checkout.</p><div className="cart-items">{cart.map(item => <article className="cart-item" key={item.id}><div className={`food-art mini ${item.tone}`}><span>{item.icon}</span></div><div><strong>{item.name}</strong><p>{money(item.price)}</p></div><div className="quantity"><button onClick={() => onChange(item.id, -1)}>−</button><span>{item.quantity}</span><button onClick={() => onChange(item.id, 1)}>+</button></div></article>)}</div><section className="summary"><div><span>Jumlah kecil</span><strong>{money(subtotal)}</strong></div><div><span>Caj servis</span><strong>RM0.00</strong></div><hr /><div className="total"><span>Jumlah</span><strong>{money(subtotal)}</strong></div></section><div className="payment-note"><span>◉</span><p><strong>Bayar di kaunter</strong><br />Sila tunjukkan nombor pesanan anda selepas checkout.</p></div><button className="primary checkout" onClick={onCheckout}>Checkout pesanan <span>→</span></button></main> }
-function Receipt({ customer, cart, total, orderNo, onNewOrder }) { return <main className="receipt-page"><div className="receipt-card"><Brand /><div className="success-ring">✓</div><p className="eyebrow">PESANAN BERJAYA DICIPTA</p><h1>Terima kasih,<br />{customer.name}!</h1><p className="receipt-lead">Pesanan anda sedang menunggu bayaran di kaunter.</p><div className="order-number"><small>NOMBOR PESANAN</small><strong>{orderNo}</strong><span>Meja {tableFromUrl}</span></div><div className="receipt-lines">{cart.map(item => <div key={item.id}><span>{item.quantity}× {item.name}</span><strong>{money(item.price * item.quantity)}</strong></div>)}<hr /><div className="grand"><span>Jumlah perlu dibayar</span><strong>{money(total)}</strong></div></div><div className="counter-callout"><span>☕</span><p><strong>Langkah seterusnya</strong><br />Sila ke kaunter dan maklumkan nombor pesanan <b>{orderNo}</b> untuk membuat bayaran.</p></div><button className="secondary" onClick={onNewOrder}>Tambah pesanan lain</button></div></main> }
+function MenuCard({ item, onAdd }) { return <article className="menu-card"><div className={`food-art ${item.tone}`}><span>{item.icon}</span>{item.tag && <small>{item.tag}</small>}</div><div className="card-copy"><p className="item-name">{item.name}</p><p className="item-note">{item.note}</p><div className="card-bottom"><strong>{money(item.price)}</strong><button className="add-button" onClick={() => onAdd(item)} aria-label={`Tambah ${item.name}`}><span>+</span></button></div></div></article> }
 
-// Kept separate so menu screen stays focused.
-const originalApp = App
-function WrappedApp() {
-  const [step, setStep] = useState('welcome'); const [customer, setCustomer] = useState({name:'',phone:''}); const [cart, setCart] = useState([])
-  // This wrapper is intentionally replaced below by the integrated state variant.
-  return null
+function PromoSlider({ active, onChange }) {
+  const promo = promotions[active]
+  const move = direction => onChange((active + direction + promotions.length) % promotions.length)
+  return <section className="promo-section" aria-label="Promosi semasa"><div className="section-label"><span>UNTUK ANDA</span><strong>Promosi istimewa</strong><div><button onClick={() => move(-1)} aria-label="Promosi sebelumnya">←</button><button onClick={() => move(1)} aria-label="Promosi seterusnya">→</button></div></div><article className={`promo-slide ${promo.theme}`}><div><p>{promo.eyebrow}</p><h2>{promo.title.split('\n').map(line => <span key={line}>{line}</span>)}</h2><small>{promo.detail}</small><b>Guna kod <em>{promo.code}</em></b></div><span className="promo-art" aria-hidden="true">{promo.art}</span></article><div className="slider-dots" aria-label="Pilih promosi">{promotions.map((item, index) => <button key={item.code} className={index === active ? 'active' : ''} onClick={() => onChange(index)} aria-label={`Promosi ${index + 1}`} />)}</div></section>
 }
+
+function PromotionPopup({ onClose }) { return <div className="promotion-overlay" role="dialog" aria-modal="true" aria-labelledby="promo-popup-title"><div className="promotion-popup"><button className="popup-close" onClick={onClose} aria-label="Tutup promosi">×</button><div className="popup-art" aria-hidden="true"><span>☕</span><i>20%</i></div><p className="eyebrow">PROMOSI PEMBUKAAN</p><h2 id="promo-popup-title">Kopi pertama,<br /><em>lebih istimewa.</em></h2><p>Dapatkan diskaun 20% untuk minuman kedua apabila anda memesan hari ini.</p><div className="promo-code"><span>KOD PROMO</span><strong>SOLOK20</strong><button onClick={onClose}>Guna sekarang <b>→</b></button></div><small>Sah untuk satu transaksi sahaja.</small></div></div> }
+
+function ItemOptions({ item, options, setOptions, onClose, onConfirm }) {
+  const isDrink = item.category === 'Minuman'
+  const addOns = isDrink ? [{ id: 'shot', label: 'Extra espresso shot', price: 3 }, { id: 'oat', label: 'Tukar kepada oat milk', price: 2 }, { id: 'cream', label: 'Whipped cream', price: 1 }] : [{ id: 'cheese', label: 'Tambah keju', price: 2 }, { id: 'sauce', label: 'Extra sos', price: 1 }]
+  const extra = addOns.filter(addOn => options.addOns.includes(addOn.id)).reduce((sum, addOn) => sum + addOn.price, 0) + (options.size === 'Large' ? 2 : 0)
+  const toggleAddOn = id => setOptions(current => ({ ...current, addOns: current.addOns.includes(id) ? current.addOns.filter(value => value !== id) : [...current.addOns, id] }))
+  return <div className="options-overlay" role="dialog" aria-modal="true" aria-labelledby="options-title"><section className="options-sheet"><button className="sheet-close" onClick={onClose} aria-label="Tutup pilihan">×</button><div className={`food-art options-art ${item.tone}`}><span>{item.icon}</span></div><p className="eyebrow">SESUAIKAN PESANAN</p><h2 id="options-title">{item.name}</h2><p className="options-base">Bermula daripada {money(item.price)}</p>{isDrink && <><fieldset><legend>Suhu minuman</legend><div className="choice-row">{['Panas', 'Ais'].map(value => <button type="button" className={options.temperature === value ? 'selected' : ''} onClick={() => setOptions(current => ({ ...current, temperature: value }))} key={value}>{value === 'Panas' ? '♨ ' : '❄ '}{value}</button>)}</div></fieldset><fieldset><legend>Saiz</legend><div className="choice-row">{['Regular', 'Large'].map(value => <button type="button" className={options.size === value ? 'selected' : ''} onClick={() => setOptions(current => ({ ...current, size: value }))} key={value}>{value}<small>{value === 'Large' ? '+RM2.00' : 'Standard'}</small></button>)}</div></fieldset></>}<fieldset><legend>Tambah pilihan</legend><div className="addon-list">{addOns.map(addOn => <label key={addOn.id}><input type="checkbox" checked={options.addOns.includes(addOn.id)} onChange={() => toggleAddOn(addOn.id)} /><span>{addOn.label}</span><b>+RM{addOn.price.toFixed(2)}</b></label>)}</div></fieldset><label className="request-field">Permintaan tambahan <textarea value={options.note} onChange={event => setOptions(current => ({ ...current, note: event.target.value }))} placeholder="Contoh: kurang manis, potong dua..." maxLength="120" /></label><button className="primary confirm-item" onClick={() => onConfirm(extra)}>Tambah ke troli <strong>{money(item.price + extra)}</strong></button></section></div>
+}
+
+function Cart({ cart, subtotal, onChange, onBack, onCheckout }) {
+  return <main className="app-shell cart-page"><header className="topbar"><button className="back" onClick={onBack} aria-label="Kembali ke menu">←</button><Brand /><span className="table-mini">Meja {tableFromUrl}</span></header><section className="page-heading"><p className="eyebrow">PESANAN ANDA</p><h1>Troli anda</h1><p className="muted">Semak pesanan sebelum checkout.</p></section><div className="cart-items">{cart.map(item => <article className="cart-item" key={item.lineId}><div className={`food-art mini ${item.tone}`}><span>{item.icon}</span></div><div><strong>{item.name}</strong><p>{[item.temperature, item.size, ...item.addOnLabels, item.note].filter(Boolean).join(' · ')}</p><b>{money(item.unitPrice)}</b></div><div className="quantity"><button onClick={() => onChange(item.lineId, -1)} aria-label={`Kurangkan ${item.name}`}>−</button><span>{item.quantity}</span><button onClick={() => onChange(item.lineId, 1)} aria-label={`Tambah ${item.name}`}>+</button></div></article>)}</div><section className="summary"><div><span>Jumlah kecil</span><strong>{money(subtotal)}</strong></div><div><span>Caj servis</span><strong>RM0.00</strong></div><hr /><div className="total"><span>Jumlah</span><strong>{money(subtotal)}</strong></div></section><div className="payment-note"><span>◉</span><p><strong>Bayar di kaunter</strong><br />Sila tunjukkan nombor pesanan anda selepas checkout.</p></div><button className="primary checkout" onClick={onCheckout}>Checkout pesanan <span>→</span></button></main>
+}
+
+function Receipt({ customer, cart, total, orderNo, onNewOrder }) { return <main className="receipt-page"><div className="receipt-card"><Brand /><div className="success-ring">✓</div><p className="eyebrow">PESANAN BERJAYA DICIPTA</p><h1>Terima kasih,<br />{customer.name}!</h1><p className="receipt-lead">Pesanan anda sedang menunggu bayaran di kaunter.</p><div className="order-number"><small>NOMBOR PESANAN</small><strong>{orderNo}</strong><span>Meja {tableFromUrl}</span></div><div className="receipt-lines">{cart.map(item => <div key={item.lineId}><span>{item.quantity}× {item.name}<small>{[item.temperature, item.size, ...item.addOnLabels, item.note].filter(Boolean).join(' · ')}</small></span><strong>{money(item.unitPrice * item.quantity)}</strong></div>)}<hr /><div className="grand"><span>Jumlah perlu dibayar</span><strong>{money(total)}</strong></div></div><div className="counter-callout"><span>☕</span><p><strong>Langkah seterusnya</strong><br />Sila ke kaunter dan maklumkan nombor pesanan <b>{orderNo}</b> untuk membuat bayaran.</p></div><button className="secondary" onClick={onNewOrder}>Tambah pesanan lain</button></div></main> }
 
 export default function SolokBrewApp() {
-  const [step, setStep] = useState('welcome'); const [customer, setCustomer] = useState({ name: '', phone: '' }); const [cart, setCart] = useState([]); const [category, setCategory] = useState('Semua'); const [notice, setNotice] = useState(''); const [orderNo, setOrderNo] = useState('')
-  const totalItems = useMemo(() => cart.reduce((s, x) => s + x.quantity, 0), [cart]); const subtotal = useMemo(() => cart.reduce((s, x) => s + x.price * x.quantity, 0), [cart]); const filtered = category === 'Semua' ? menu : menu.filter(x => x.category === category)
-  const add = item => { setCart(c => { const x = c.find(i => i.id === item.id); return x ? c.map(i => i.id === item.id ? {...i, quantity:i.quantity+1} : i) : [...c,{...item,quantity:1}] }); setNotice(`${item.name} ditambah ke troli`); setTimeout(() => setNotice(''), 1600) }
-  const change = (id, delta) => setCart(c => c.map(i => i.id === id ? {...i,quantity:i.quantity+delta} : i).filter(i => i.quantity > 0))
-  if (step === 'welcome') return <Welcome customer={customer} setCustomer={setCustomer} onSubmit={e => { e.preventDefault(); if (customer.name.trim() && customer.phone.trim().length >= 9) setStep('menu') }} />
-  if (step === 'cart') return <Cart cart={cart} subtotal={subtotal} onChange={change} onBack={() => setStep('menu')} onCheckout={() => { setOrderNo(`SB-${Math.floor(1000 + Math.random()*9000)}`); setStep('receipt') }} />
-  if (step === 'receipt') return <Receipt customer={customer} cart={cart} total={subtotal} orderNo={orderNo} onNewOrder={() => {setCart([]);setStep('menu')}} />
-  return <main className="app-shell"><header className="topbar"><Brand /><button className="table-badge"><span>Meja</span>{tableFromUrl}</button></header><section className="greeting"><p>Hai, {customer.name.split(' ')[0]} <span>✦</span></p><h1>Apa yang anda mahu hari ini?</h1><small>Pesan dari meja anda. Bayar di kaunter selepas checkout.</small></section><nav className="category-tabs">{['Semua','Minuman','Makanan','Dessert'].map(tab => <button key={tab} className={category===tab?'active':''} onClick={() => setCategory(tab)}>{tab}</button>)}</nav><section className="menu-grid">{filtered.map(item => <article className="menu-card" key={item.id}><div className={`food-art ${item.tone}`}><span>{item.icon}</span></div><div className="card-copy"><p className="item-name">{item.name}</p><p className="item-note">{item.note}</p><div className="card-bottom"><strong>{money(item.price)}</strong><button className="add-button" onClick={() => add(item)}>+</button></div></div></article>)}</section>{notice && <div className="toast">✓ {notice}</div>}{totalItems>0 && <button className="cart-bar" onClick={() => setStep('cart')}><span className="cart-count">{totalItems}</span><span>Lihat troli</span><strong>{money(subtotal)} <b>›</b></strong></button>}</main>
+  const [step, setStep] = useState('welcome'); const [customer, setCustomer] = useState({ name: '', phone: '' }); const [cart, setCart] = useState([]); const [category, setCategory] = useState('Semua'); const [notice, setNotice] = useState(''); const [orderNo, setOrderNo] = useState(''); const [activePromo, setActivePromo] = useState(0); const [showPromotion, setShowPromotion] = useState(true); const [customizingItem, setCustomizingItem] = useState(null); const [options, setOptions] = useState({ temperature: 'Ais', size: 'Regular', addOns: [], note: '' })
+  const totalItems = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]); const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0), [cart]); const filtered = category === 'Semua' ? menu : menu.filter(item => item.category === category)
+  const openOptions = item => { setCustomizingItem(item); setOptions({ temperature: 'Ais', size: 'Regular', addOns: [], note: '' }) }
+  const add = extra => { const item = customizingItem; const addOnNames = item.category === 'Minuman' ? { shot: 'Extra shot', oat: 'Oat milk', cream: 'Whipped cream' } : { cheese: 'Extra keju', sauce: 'Extra sos' }; const lineId = `${item.id}-${options.temperature}-${options.size}-${[...options.addOns].sort().join('-')}-${options.note.trim()}`; const configuredItem = { ...item, lineId, quantity: 1, unitPrice: item.price + extra, temperature: item.category === 'Minuman' ? options.temperature : '', size: item.category === 'Minuman' ? options.size : '', addOnLabels: options.addOns.map(value => addOnNames[value]), note: options.note.trim() }; setCart(current => { const found = current.find(entry => entry.lineId === lineId); return found ? current.map(entry => entry.lineId === lineId ? { ...entry, quantity: entry.quantity + 1 } : entry) : [...current, configuredItem] }); setCustomizingItem(null); setNotice(`${item.name} ditambah ke troli`); window.setTimeout(() => setNotice(''), 1800) }
+  const change = (lineId, delta) => setCart(current => current.map(item => item.lineId === lineId ? { ...item, quantity: item.quantity + delta } : item).filter(item => item.quantity > 0))
+  if (step === 'welcome') return <Welcome customer={customer} setCustomer={setCustomer} onSubmit={event => { event.preventDefault(); if (customer.name.trim() && customer.phone.trim().length >= 9) setStep('menu') }} />
+  if (step === 'cart') return <Cart cart={cart} subtotal={subtotal} onChange={change} onBack={() => setStep('menu')} onCheckout={() => { setOrderNo(`SB-${Math.floor(1000 + Math.random() * 9000)}`); setStep('receipt') }} />
+  if (step === 'receipt') return <Receipt customer={customer} cart={cart} total={subtotal} orderNo={orderNo} onNewOrder={() => { setCart([]); setStep('menu') }} />
+  return <main className="app-shell"><header className="topbar glass-panel"><Brand /><button className="table-badge" title="Nombor meja daripada QR"><span>Meja</span>{tableFromUrl}<i /></button></header><section className="greeting glass-panel"><p>Hai, {customer.name.split(' ')[0]} <span>✦</span></p><h1>Apa yang anda mahu<br />hari ini?</h1><small>Pesan dari meja anda. Bayar di kaunter selepas checkout.</small></section><nav className="category-tabs" aria-label="Kategori menu">{categories.map(tab => <button key={tab} className={category === tab ? 'active' : ''} onClick={() => setCategory(tab)}>{tab}</button>)}</nav><PromoSlider active={activePromo} onChange={setActivePromo} /><section className="menu-section-heading"><p className="eyebrow">MENU PILIHAN</p><h2>Terus dari bar kami</h2></section><section className="menu-grid" aria-live="polite">{filtered.map(item => <MenuCard key={item.id} item={item} onAdd={openOptions} />)}</section>{notice && <div className="toast" role="status">✓ {notice}</div>}{totalItems > 0 && <button className="cart-bar" onClick={() => setStep('cart')}><span className="cart-count">{totalItems}</span><span>Lihat troli</span><strong>{money(subtotal)} <b>›</b></strong></button>}{showPromotion && <PromotionPopup onClose={() => setShowPromotion(false)} />}{customizingItem && <ItemOptions item={customizingItem} options={options} setOptions={setOptions} onClose={() => setCustomizingItem(null)} onConfirm={add} />}</main>
 }
